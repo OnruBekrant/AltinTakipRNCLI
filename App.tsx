@@ -1,131 +1,175 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, { useState } from 'react';
 import {
-  ScrollView,
-  StatusBar,
+  SafeAreaView,
   StyleSheet,
-  Text,
-  useColorScheme,
   View,
+  Text,
+  TextInput,
+  Button,
+  Alert, // Kullanıcıya basit mesajlar göstermek için
+  ScrollView, // Çok sayıda giriş olduğunda kaydırma için
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
+// Her bir altın alımının nasıl görüneceğini tanımlayalım
+interface GoldPurchase {
+  id: string; // Benzersiz bir kimlik
+  date: string;
+  price: string; // Şimdilik string, sayısal işlemlerde Number() ile çevireceğiz
+  quantity: string; // Şimdilik string
+  // notes?: string; // Opsiyonel not alanı
 }
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  const [date, setDate] = useState('');
+  const [price, setPrice] = useState('');
+  const [quantity, setQuantity] = useState('');
+  // const [notes, setNotes] = useState(''); // Notlar için
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  // Kaydedilen altın alımlarını tutacak state
+  const [purchases, setPurchases] = useState<GoldPurchase[]>([]);
+
+  const handleAddPurchase = () => {
+    if (!date.trim() || !price.trim() || !quantity.trim()) {
+      Alert.alert('Hata', 'Lütfen tüm zorunlu alanları doldurun.');
+      return;
+    }
+
+    // Basit bir ID oluşturma (daha iyisi için uuid gibi bir kütüphane kullanılabilir)
+    const newPurchase: GoldPurchase = {
+      id: Date.now().toString(), // Geçici olarak anlık zamanı ID yapalım
+      date,
+      price,
+      quantity,
+      // notes,
+    };
+
+    // Yeni alımı mevcut listeye ekle
+    setPurchases(prevPurchases => [...prevPurchases, newPurchase]);
+
+    // Formu temizle
+    setDate('');
+    setPrice('');
+    setQuantity('');
+    // setNotes('');
+
+    Alert.alert('Başarılı', 'Altın alımınız eklendi!');
   };
 
-  /*
-   * To keep the template simple and small we're adding padding to prevent view
-   * from rendering under the System UI.
-   * For bigger apps the recommendation is to use `react-native-safe-area-context`:
-   * https://github.com/AppAndFlow/react-native-safe-area-context
-   *
-   * You can read more about it here:
-   * https://github.com/react-native-community/discussions-and-proposals/discussions/827
-   */
-  const safePadding = '5%';
-
   return (
-    <View style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        style={backgroundStyle}>
-        <View style={{paddingRight: safePadding}}>
-          <Header/>
+    <SafeAreaView style={styles.container}>
+      <ScrollView>
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>Yeni Altın Alımı Ekle</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Alış Tarihi (örn: 24.05.2025)"
+            value={date}
+            onChangeText={setDate}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Alış Fiyatı (Gram TL)"
+            value={price}
+            onChangeText={setPrice}
+            keyboardType="numeric"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Miktar (Gram)"
+            value={quantity}
+            onChangeText={setQuantity}
+            keyboardType="numeric"
+          />
+          {/*
+          <TextInput
+            style={styles.input}
+            placeholder="Notlar (opsiyonel)"
+            value={notes}
+            onChangeText={setNotes}
+          />
+          */}
+          <Button title="Ekle" onPress={handleAddPurchase} />
         </View>
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-            paddingHorizontal: safePadding,
-            paddingBottom: safePadding,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+
+        <View style={styles.listContainer}>
+          <Text style={styles.title}>Kaydedilen Alımlar</Text>
+          {purchases.length === 0 ? (
+            <Text style={styles.emptyText}>Henüz kayıtlı alım yok.</Text>
+          ) : (
+            purchases.map(purchase => (
+              <View key={purchase.id} style={styles.listItem}>
+                <Text style={styles.listItemText}>Tarih: {purchase.date}</Text>
+                <Text style={styles.listItemText}>Fiyat: {purchase.price} TL/g</Text>
+                <Text style={styles.listItemText}>Miktar: {purchase.quantity} g</Text>
+                {/* purchase.notes ? <Text style={styles.listItemText}>Not: {purchase.notes}</Text> : null */}
+              </View>
+            ))
+          )}
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  formContainer: {
+    padding: 20,
+    backgroundColor: '#ffffff',
+    margin: 10,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
+  listContainer: {
+    padding: 20,
+    margin: 10,
+    marginTop: 0,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
   },
-  highlight: {
-    fontWeight: '700',
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
   },
+  input: {
+    height: 45,
+    borderColor: '#cccccc',
+    borderWidth: 1,
+    marginBottom: 12,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    backgroundColor: '#f9f9f9',
+  },
+  listItem: {
+    backgroundColor: '#e9e9e9',
+    padding: 15,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  listItemText: {
+    fontSize: 16,
+    marginBottom: 3,
+  },
+  emptyText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#777',
+    marginTop: 10,
+  }
 });
 
 export default App;
